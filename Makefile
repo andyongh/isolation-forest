@@ -1,22 +1,23 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -O3 -lm -lpthread
+CFLAGS = -fPIC -Wall
+LDFLAGS = -lpthread
+TARGET_LIB = libiforest.so
+TEST_EXEC = test
 PYTHON = python3
 
-.PHONY: all generate_data build run clean
+.PHONY: all clean data
 
-all: generate_data build run
+all: $(TARGET_LIB) $(TEST_EXEC)
 
-generate_data:
+$(TARGET_LIB): isolation_forest.c
+	$(CC) $(CFLAGS) -shared -o $@ $< $(LDFLAGS)
+
+$(TEST_EXEC): test.c $(TARGET_LIB)
+	$(CC) $(CFLAGS) -o $@ test.c -L. -liforest -g $(LDFLAGS)
+
+data:
 	@echo "Generating test data..."
 	@$(PYTHON) generate_data.py
 
-build: isolation_forest.c
-	@echo "Building C implementation..."
-	@$(CC) $(CFLAGS) -o isolation_forest isolation_forest.c
-
-run: isolation_forest
-	@echo "Running isolation forest..."
-	@./isolation_forest
-
 clean:
-	@rm -f isolation_forest test_data.csv c_scores.txt
+	rm -f $(TARGET_LIB) $(TEST_EXEC) *.o c_scores.txt test_data.csv
